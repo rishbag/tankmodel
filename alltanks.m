@@ -16,8 +16,8 @@
     
 % Задание начальных условий
     yaw = 0 * pi/180; % Угол рыскания, рад 
-    pitch = 0 * pi/180; % Угол тангажа, рад 
-    roll = 10 * pi/180; % Угол крена, рад
+    pitch = 30 * pi/180; % Угол тангажа, рад 
+    roll = 30 * pi/180; % Угол крена, рад
     V_ini = 15; % Начальный объем жидкости, л
     v_c = 0.2; % Расход жидкости, л/с
     t_step = 0.05; % Шаг времени, с
@@ -45,7 +45,8 @@
             X_CM = sum(CM_array(:,6)) / sum(CM_array(:,5)); % x-координата общего ЦМ, м
             Y_CM = sum(CM_array(:,7)) / sum(CM_array(:,5)); % y-координата общего ЦМ, м
             Z_CM = sum(CM_array(:,8)) / sum(CM_array(:,5)); % z-координата общего ЦМ, м
-            R_CM = sqrt(X_CM ^ 2 + Y_CM ^ 2 + Z_CM ^ 2); % Длина радиус-вектора от ЦМ аппарата до ЦМ баков, м
+            %R_CM = sqrt(X_CM ^ 2 + Y_CM ^ 2 + Z_CM ^ 2); % Длина радиус-вектора от ЦМ аппарата до ЦМ баков, м
+            R_CM = sqrt(X_CM ^ 2 + Y_CM ^ 2 );
             CM_position = [X_CM Y_CM Z_CM]; % координаты ЦМ, м
             
         else
@@ -57,7 +58,8 @@
             %Y_CM = 0; % y-координата общего ЦМ, м
             %Z_CM = 0; % z-координата общего ЦМ, м
             
-            R_CM = sqrt(X_CM ^ 2 + Y_CM ^ 2 + Z_CM ^ 2); % Длина радиус-вектора от ЦМ аппарата до ЦМ баков, м
+            %R_CM = sqrt(X_CM ^ 2 + Y_CM ^ 2 + Z_CM ^ 2); % Длина радиус-вектора от ЦМ аппарата до ЦМ баков, м
+            R_CM = sqrt(X_CM ^ 2 + Y_CM ^ 2 );
             CM_position = [X_CM Y_CM Z_CM]; % координаты ЦМ, м
         end
 
@@ -74,18 +76,10 @@
     end
 %% Построение графиков
     % Зависимость момента и массы от времени
-        % M
-        figure % Построение в отдельном окне
-        plot(Gl_array(:,1),Gl_array(:,5)) % Непосредственно само построение 
-        grid on; % Сетка
-        title('Dependency of Mass and Torque on Time'); % Заголовок
-        xlabel('Time, s'); % Подпись оси x
-        ylabel('M, N*m'); % Подпись оси y
-        legend('M'); % Подпись кривых
-
+    
         % M_x
         figure % Построение в отдельном окне
-        subplot(4,1,1)
+        subplot(3,1,1)
         plot(Gl_array(:,1),Gl_array(:,7)) % Непосредственно само построение 
         grid on; % Сетка
         title('Dependency of M_x on Time'); % Заголовок
@@ -94,7 +88,7 @@
         legend('M x'); % Подпись кривых
 
         % M_y
-        subplot(4,1,2)
+        subplot(3,1,2)
         plot(Gl_array(:,1),Gl_array(:,8), 'm-') % Непосредственно само построение 
         grid on; % Сетка
         title('Dependency of M_y on Time'); % Заголовок
@@ -102,17 +96,8 @@
         ylabel('Torque_y, N*m'); % Подпись оси y
         legend('M y'); % Подпись кривых
         
-        % M_y
-        subplot(4,1,3)
-        plot(Gl_array(:,1),Gl_array(:,9), 'k-') % Непосредственно само построение 
-        grid on; % Сетка
-        title('Dependency of M_z on Time'); % Заголовок
-        xlabel('Time, s'); % Подпись оси x
-        ylabel('Torque_z, N*m'); % Подпись оси y
-        legend('M z'); % Подпись кривых
-        
         % m_all
-        subplot(4,1,4)
+        subplot(3,1,3)
         plot(Gl_array(:,1),Gl_array(:,6), 'r-') % Непосредственно само построение 
         grid on; % Сетка
         title('Dependency of Mass'); % Заголовок
