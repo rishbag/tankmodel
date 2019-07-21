@@ -16,25 +16,27 @@
     
 % Задание начальных условий
     yaw = 0 * pi/180; % Угол рыскания, рад 
-    pitch = 30 * pi/180; % Угол тангажа, рад 
-    roll = 30 * pi/180; % Угол крена, рад
+    pitch = 0 * pi/180; % Угол тангажа, рад 
+    roll = 0 * pi/180; % Угол крена, рад
     V_ini = 15; % Начальный объем жидкости, л
     v_c = 0.2; % Расход жидкости, л/с
     t_step = 0.05; % Шаг времени, с
     t_max = V_ini / v_c; % Максимальное время симуляции, с
     T_max = ceil(t_max); % Округление до ближайшего большего значения
+    a_x = 2; % Линенйное ускорение по оси x, м/с^2
+    a_y = 0; % Линенйное ускорение по оси y, м/с^2
     k = 0; % Счетчик
     %t = 50; % Рассматриваемый период времени, с
     
-    for t = 0:t_step:T_max
+    for t = 0:t_step: 0.9 * T_max
         k = k + 1;
         % Определение координат ЦМ для каждого бака по-отдельности
         for n = 1:12
             x_ini = X_array(n,:); % Получение x-координаты каждого бака из вектора, м
             y_ini = Y_array(n,:); % Получение y-координаты каждого бака из вектора, м
             z_ini = Z_array(n,:); % Получение z-координаты каждого бака из вектораб м
-            [x_new,y_new,z_new,V_t,m_l] = tankmodel(yaw,pitch,roll,V_ini,v_c,t,x_ini,y_ini,z_ini);
-            CM_vector = [x_new y_new z_new V_t m_l x_new*m_l y_new*m_l z_new*m_l]; % Занесение полученных данных в одну строку
+            [x_new,y_new,z_new,V_t,m_l,m_x,m_y] = tankmodel(yaw,pitch,roll,V_ini,v_c,t,x_ini,y_ini,z_ini,a_x,a_y);
+            CM_vector = [x_new y_new z_new V_t m_l x_new*m_l y_new*m_l z_new*m_l m_x m_y]; % Занесение полученных данных в одну строку
             CM_array(n,:) = CM_vector; % Запись данных в общую матрицу
         end
 
@@ -46,8 +48,12 @@
             Y_CM = sum(CM_array(:,7)) / sum(CM_array(:,5)); % y-координата общего ЦМ, м
             Z_CM = sum(CM_array(:,8)) / sum(CM_array(:,5)); % z-координата общего ЦМ, м
             %R_CM = sqrt(X_CM ^ 2 + Y_CM ^ 2 + Z_CM ^ 2); % Длина радиус-вектора от ЦМ аппарата до ЦМ баков, м
-            R_CM = sqrt(X_CM ^ 2 + Y_CM ^ 2 );
+            R_CM = sqrt(X_CM ^ 2 + Y_CM ^ 2 ); % Длина радиус-вектора от ЦМ аппарата до ЦМ баков, м
             CM_position = [X_CM Y_CM Z_CM]; % координаты ЦМ, м
+            
+            X_CM2 = (sum(abs(CM_array(:,6))) - sum(abs(X_array)) * m_all) / sum(CM_array(:,5)); % x-координата общего ЦМ, м
+            Y_CM2 = (sum(abs(CM_array(:,7))) - sum(abs(Y_array)) * m_all) / sum(CM_array(:,5)); % y-координата общего ЦМ, м
+            Z_CM2 = (sum(abs(CM_array(:,8))) - sum(abs(Z_array)) * m_all) / sum(CM_array(:,5)); % z-координата общего ЦМ, м
             
         else
             X_CM = sum(CM_array(:,1)) / 12; % x-координата общего ЦМ, м
@@ -69,9 +75,14 @@
             M_x = abs(m_all * g * X_CM);
             M_y = abs(m_all * g * Y_CM);
             M_z = abs(m_all * g * Z_CM);
+            M_x2 = abs(m_all * g * X_CM);
+            M_y2 = abs(m_all * g * Y_CM);
+            M_z2 = abs(m_all * g * Z_CM);
+            T_X = sum(abs(CM_array(:,9))) - sum(abs(X_array)) * m_all * 0;
+            T_Y = sum(abs(CM_array(:,10))) - sum(abs(Y_array)) * m_all * 0;
             
         % Запись данных массив для каждого промежутка времени
-            Gl_vector = [t X_CM Y_CM Z_CM M m_all M_x M_y M_z R_CM];
+            Gl_vector = [t X_CM Y_CM Z_CM M m_all M_x M_y M_z R_CM M_x2 M_y2 M_z2];
             Gl_array(k,:) = Gl_vector;
     end
 %% Построение графиков
@@ -80,29 +91,36 @@
         % M_x
         figure % Построение в отдельном окне
         subplot(3,1,1)
-        plot(Gl_array(:,1),Gl_array(:,7)) % Непосредственно само построение 
+        %plot(Gl_array(:,1),Gl_array(:,7)) % Непосредственно само построение 
+        plot(Gl_array(:,1),Gl_array(:,7),Gl_array(:,1),Gl_array(:,11)) % Непосредственно само построение 
         grid on; % Сетка
-        title('Dependency of M_x on Time'); % Заголовок
-        xlabel('Time, s'); % Подпись оси x
-        ylabel('Torque_x, N*m'); % Подпись оси y
-        legend('M x'); % Подпись кривых
+        set(gca,'fontname','Times New Roman Cyr')
+        title('Зависимость M_x от времени'); % Заголовок
+        xlabel('Время, с'); % Подпись оси x
+        ylabel('М_x, Н*м'); % Подпись оси y
+        %legend('M x'); % Подпись кривых
+        legend('M x', 'T X'); % Подпись кривых
 
         % M_y
         subplot(3,1,2)
-        plot(Gl_array(:,1),Gl_array(:,8), 'm-') % Непосредственно само построение 
+        %plot(Gl_array(:,1),Gl_array(:,8), 'm-') % Непосредственно само построение 
+        plot(Gl_array(:,1),Gl_array(:,8),Gl_array(:,1),Gl_array(:,12), 'm-') % Непосредственно само построение 
         grid on; % Сетка
-        title('Dependency of M_y on Time'); % Заголовок
-        xlabel('Time, s'); % Подпись оси x
-        ylabel('Torque_y, N*m'); % Подпись оси y
-        legend('M y'); % Подпись кривых
+        set(gca,'fontname','Times New Roman Cyr')
+        title('Зависимость M_y от времени'); % Заголовок
+        xlabel('Время, с'); % Подпись оси x
+        ylabel('М_y, Н*м'); % Подпись оси y
+        %legend('M y'); % Подпись кривых
+        legend('M y', 'T Y'); % Подпись кривых
         
         % m_all
         subplot(3,1,3)
         plot(Gl_array(:,1),Gl_array(:,6), 'r-') % Непосредственно само построение 
         grid on; % Сетка
-        title('Dependency of Mass'); % Заголовок
-        xlabel('Time, s'); % Подпись оси x
-        ylabel('Mass, kg'); % Подпись оси y
+        set(gca,'fontname','Times New Roman Cyr')
+        title('Зависимость массы от времени'); % Заголовок
+        xlabel('Время, с'); % Подпись оси x
+        ylabel('m_all, кг'); % Подпись оси y
         legend('m all'); % Подпись кривых
     
     % Зависимость координат от времени
@@ -111,26 +129,29 @@
         subplot(3,1,1);
         plot(Gl_array(:,1),Gl_array(:,2)) % Непосредственно само построение 
         grid on; % Сетка
-        title('Changing of the coordinats of CM'); % Заголовок
-        xlabel('Time, s'); % Подпись оси x
-        ylabel('Coordinates, m'); % Подпись оси y
+        set(gca,'fontname','Times New Roman Cyr')
+        title('Изменение координаты ЦМ'); % Заголовок
+        xlabel('Время, с'); % Подпись оси x
+        ylabel('X, м'); % Подпись оси y
         legend('X'); % Подпись кривых
         
         % Y
         subplot(3,1,2);
         plot(Gl_array(:,1),Gl_array(:,3), 'm-') % Непосредственно само построение 
         grid on; % Сетка
-        title('Changing of the coordinats of CM'); % Заголовок
-        xlabel('Time, s'); % Подпись оси x
-        ylabel('Coordinates, m'); % Подпись оси y
+        set(gca,'fontname','Times New Roman Cyr')
+        title('Изменение координаты ЦМ'); % Заголовок
+        xlabel('Время, с'); % Подпись оси x
+        ylabel('Y, м'); % Подпись оси y
         legend('Y'); % Подпись кривых
         
         % Z
         subplot(3,1,3);
         plot(Gl_array(:,1),Gl_array(:,4), 'r-') % Непосредственно само построение 
         grid on; % Сетка
-        title('Changing of the coordinats of CM'); % Заголовок
-        xlabel('Time, s'); % Подпись оси x
-        ylabel('Coordinates, m'); % Подпись оси y
+        set(gca,'fontname','Times New Roman Cyr')
+        title('Изменение координаты ЦМ'); % Заголовок
+        xlabel('Время, с'); % Подпись оси x
+        ylabel('Z, м'); % Подпись оси y
         legend('Z'); % Подпись кривых
     

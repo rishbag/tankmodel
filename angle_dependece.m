@@ -19,6 +19,8 @@
     yaw = 0 * pi/180; % Угол рыскания, рад 
     pitch = 0 * pi/180; % Угол тангажа, рад 
     %roll = 30 * pi/180; % Угол крена, рад
+    a_x = 0;
+    a_y = 0;
     V_ini = 15; % Начальный объем жидкости, л
     v_c = 0.2; % Расход жидкости, л/с
     t_step = 0.05; % Шаг времени, с
@@ -31,7 +33,7 @@
         a_1 = a_1 + 1;
         roll = m * pi/180; % Угол крена, рад
         k = 0; % Счетчик
-        for l = 0:15:30
+        for l = 0:1:30
             k = k + 1;
             pitch = l * pi/180; % Угол крена, рад
             % Определение координат ЦМ для каждого бака по-отдельности
@@ -39,8 +41,8 @@
                 x_ini = X_array(n,:); % Получение x-координаты каждого бака из вектора, м
                 y_ini = Y_array(n,:); % Получение y-координаты каждого бака из вектора, м
                 z_ini = Z_array(n,:); % Получение z-координаты каждого бака из вектораб м
-                [x_new,y_new,z_new,V_t,m_l] = tankmodel(yaw,pitch,roll,V_ini,v_c,t,x_ini,y_ini,z_ini);
-                CM_vector = [x_new y_new z_new V_t m_l x_new*m_l y_new*m_l z_new*m_l]; % Занесение полученных данных в одну строку
+                [x_new,y_new,z_new,V_t,m_l,m_x,m_y] = tankmodel(yaw,pitch,roll,V_ini,v_c,t,x_ini,y_ini,z_ini,a_x,a_y);
+                CM_vector = [x_new y_new z_new V_t m_l x_new*m_l y_new*m_l z_new*m_l m_x m_y]; % Занесение полученных данных в одну строку
                 CM_array(n,:) = CM_vector; % Запись данных в общую матрицу
             end
 
@@ -73,9 +75,11 @@
                 M_x = abs(m_all * g * X_CM);
                 M_y = abs(m_all * g * Y_CM);
                 M_z = abs(m_all * g * Z_CM);
+                T_X = sum(abs(CM_array(:,9)));
+                T_Y = sum(abs(CM_array(:,10)));
 
             % Запись данных массив для каждого промежутка времени
-                Gl_vector = [t X_CM Y_CM Z_CM M m_all M_x M_y M_z R_CM m l];
+                Gl_vector = [t X_CM Y_CM Z_CM M m_all M_x M_y M_z R_CM m l T_X T_Y];
                 Gl_array(k,:) = Gl_vector;
 
         end
@@ -85,36 +89,44 @@
         subplot(2,2,1)
         plot(Gl_array(:,12), Gl_array(:,7)) % Непосредственно само построение 
         grid on; % Сетка
-        title(['Dependency of M_x on pitch angle when roll = ',num2str(m),' deg']); % Заголовок
-        xlabel('angle, deg'); % Подпись оси x
-        ylabel('Torque_x, N*m'); % Подпись оси y
+        set(gca,'fontname','Times New Roman Cyr')
+        title(['Зависимость момента M_x от угла крена когда тангаж  = ',num2str(m),' град']); % Заголовок
+        xlabel('Крен, град'); % Подпись оси x
+        ylabel('M_x, Н*м'); % Подпись оси y
         legend('M x'); % Подпись кривых
+        set(gca, 'XTick',0:5:30);
 
         % M_y
         subplot(2,2,2)
         plot(Gl_array(:,12), Gl_array(:,8),'m-') % Непосредственно само построение 
         grid on; % Сетка
-        title(['Dependency of M_y on pitch angle when roll = ',num2str(m),' deg']); % Заголовок
-        xlabel('pitch, deg'); % Подпись оси x
-        ylabel('Torque_y, N*m'); % Подпись оси y
+        set(gca,'fontname','Times New Roman Cyr')
+        title(['Зависимость момента M_y от угла крена когда тангаж = ',num2str(m),' град']); % Заголовок
+        xlabel('Крен, град'); % Подпись оси x
+        ylabel('M_y, Н*м'); % Подпись оси y
         legend('M y'); % Подпись кривых
+        set(gca, 'XTick',0:5:30);
 
         % Зависимость координат
         % X
         subplot(2,2,3);
         plot(Gl_array(:,12), Gl_array(:,2)) % Непосредственно само построение 
         grid on; % Сетка
-        title(['Dependency of coordinats of CM on pitch angle when roll = ',num2str(m),' deg']); % Заголовок
-        xlabel('pitch, deg'); % Подпись оси x
-        ylabel('Coordinates, m'); % Подпись оси y
+        set(gca,'fontname','Times New Roman Cyr')
+        title(['Зависимость координаты x от угла крена когда тангаж = ',num2str(m),' град']); % Заголовок
+        xlabel('Крен, град'); % Подпись оси x
+        ylabel('x, м'); % Подпись оси y
         legend('X'); % Подпись кривых
+        set(gca, 'XTick',0:5:30);
 
         % Y
         subplot(2,2,4);
         plot(Gl_array(:,12), Gl_array(:,3), 'm-') % Непосредственно само построение 
         grid on; % Сетка
-        title(['Dependency of coordinats of CM on pitch angle when roll = ',num2str(m),' deg']); % Заголовок
-        xlabel('pitch, deg'); % Подпись оси x
-        ylabel('Coordinates, m'); % Подпись оси y
+        set(gca,'fontname','Times New Roman Cyr')
+        title(['Зависимость координаты y от угла крена когда тангаж = ',num2str(m),' град']); % Заголовок
+        xlabel('Крен, град'); % Подпись оси x
+        ylabel('y, м'); % Подпись оси y
         legend('Y'); % Подпись кривых
+        set(gca, 'XTick',0:5:30);
     end
